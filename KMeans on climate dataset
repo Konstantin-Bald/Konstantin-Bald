@@ -1,0 +1,114 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+
+# 1. Load the dataset
+# If your CSV file contains additional header rows (comments), adjust skiprows accordingly.
+df = pd.read_csv(r'MyDatascience\GLB.Ts+dSST.csv', skiprows=1)
+
+# 2. Select relevant columns
+df = df[["Year", "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec", "J-D", "D-N", 
+         "DJF", "MAM", "JJA", "SON"]]
+
+# 3. Handle missing values
+# Replace '***' placeholders with NaN and fill missing values (e.g., with 0)
+df.replace('***', np.nan, inplace=True)
+df.fillna(0, inplace=True)
+
+# 4. Convert columns to numeric data types
+df['Year'] = pd.to_numeric(df['Year'], errors='coerce')
+df['J-D'] = pd.to_numeric(df['J-D'], errors='coerce')
+
+# Optional: Print dataset info to verify correctness
+print(df.head())
+print(df.info())
+
+# 5. Define features and target variable
+X = df[['Year']]
+y = df['J-D']
+
+# 6. Split data into training and test sets
+# For time series, shuffling is often not recommended, so we set shuffle=False
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+
+# 7. Initialize and train a linear regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# 8. Make predictions on the test data
+y_pred = model.predict(X_test)
+
+# 9. Evaluate the model
+mse = mean_squared_error(y_test, y_pred)
+print("Mean Squared Error:", mse)
+print("Model Coefficient (Slope):", model.coef_)
+print("Model Intercept:", model.intercept_)
+
+# 10. Visualize the data and predictions
+plt.figure(figsize=(10, 6))
+plt.plot(X_train, y_train, label='Training Data', marker='o', linestyle='--')
+plt.plot(X_test, y_test, label='Test Data', marker='o', linestyle='--')
+plt.scatter(X, y, color='red')
+plt.xlabel('Year')
+plt.ylabel('Temperature Anomaly (J-D)')
+plt.legend()
+plt.title('Linear Regression for Temperature Anomaly Prediction')
+plt.show()
+
+# K-Means Clustering
+df1 = df[["Year", "DJF", "MAM", "JJA", "SON"]]
+df1 = df1.apply(pd.to_numeric, errors='coerce')
+df1.dropna(inplace=True)
+
+# Apply StandardScaler for better clustering performance
+scaler = StandardScaler()
+df_scaled = scaler.fit_transform(df1)
+
+# Determine the optimal number of clusters using the Silhouette Method
+silhouette_scores = []
+K_range = range(2, 6)
+
+for k in K_range:
+    kmeans = KMeans(n_clusters=k, init='k-means++', random_state=36)
+    labels = kmeans.fit_predict(df_scaled)
+    silhouette_scores.append(silhouette_score(df_scaled, labels))
+
+best_k = K_range[np.argmax(silhouette_scores)]
+print(f'Optimal number of clusters (k): {best_k}')
+
+# Perform clustering with the optimal k value
+kmeans = KMeans(n_clusters=best_k, init='k-means++', random_state=36)
+df1['Cluster'] = kmeans.fit_predict(df_scaled)
+
+# Visualization of clustering results
+plt.figure(figsize=(10, 6))
+plt.scatter(df1['DJF'], df1['JJA'], c=df1['Cluster'], cmap='viridis', marker='o')
+plt.xlabel('DJF (Dec-Jan-Feb)')
+plt.ylabel('JJA (Jun-Jul-Aug)')
+plt.title(f'K-Means Clustering based on DJF and JJA')
+plt.colorbar(label='Cluster')
+plt.show()
+
+# Visualization of cluster assignment over time
+plt.figure(figsize=(10, 6))
+plt.scatter(df1['Year'], df1['Cluster'], c=df1['Cluster'], cmap='viridis', marker='o')
+plt.xlabel('Year')
+plt.ylabel('Cluster')
+plt.title('Cluster Assignment Over the Years Based on Seasonal Anomalies')
+plt.show()
+
+# Final clustering visualization based on Year and DJF
+plt.figure(figsize=(10, 6))
+plt.scatter(df1['Year'], df1['DJF'], c=df1['Cluster'], cmap='viridis', marker='o')
+plt.xlabel('Year')
+plt.ylabel('Temperature Anomaly (J-D)')
+plt.title(f'K-Means Clustering with k={best_k}')
+plt.colorbar(label='Cluster')
+plt.show()
