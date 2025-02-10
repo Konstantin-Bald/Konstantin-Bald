@@ -96,14 +96,6 @@ plt.title(f'K-Means Clustering based on DJF and JJA')
 plt.colorbar(label='Cluster')
 plt.show()
 
-# Visualization of cluster assignment over time
-plt.figure(figsize=(10, 6))
-plt.scatter(df1['Year'], df1['Cluster'], c=df1['Cluster'], cmap='viridis', marker='o')
-plt.xlabel('Year')
-plt.ylabel('Cluster')
-plt.title('Cluster Assignment Over the Years Based on Seasonal Anomalies')
-plt.show()
-
 # Final clustering visualization based on Year and DJF
 plt.figure(figsize=(10, 6))
 plt.scatter(df1['Year'], df1['DJF'], c=df1['Cluster'], cmap='viridis', marker='o')
