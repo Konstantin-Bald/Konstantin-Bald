@@ -1,0 +1,44 @@
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras import datasets, Input, Model
+from tensorflow.keras.layers import Dense
+(X_train, _), (X_test, _)  = datasets.mnist.load_data()
+X_train = X_train.astype('float32') / 255.
+X_test = X_test.astype('float32') / 255.
+X_train = X_train.reshape((len(X_train), np.prod(X_train.shape[1:])))
+X_test = X_test.reshape((len(X_test), np.prod(X_test.shape[1:])))
+print(X_train.shape)
+print(X_test.shape)
+
+input_img = Input(shape=(784,))
+encoded = Dense(128, activation='relu')(input_img)
+encoded = Dense(64, activation='relu')(encoded)
+encoded = Dense(32, activation='relu')(encoded)
+decoded = Dense(64, activation='relu')(encoded)
+decoded = Dense(128, activation='relu')(decoded)
+decoded = Dense(784, activation='sigmoid')(decoded)
+
+
+
+autoencoder = Model(input_img, decoded)
+autoencoder.compile(optimizer='adam', loss='binary_crossentropy')
+autoencoder.fit(X_train, X_train, epochs=4, batch_size=256, shuffle=True, validation_data=(X_test, X_test))
+predicted_imgs = autoencoder.predict(X_test)
+n = 10  # Anzahl der Ziffern, die dargestellt werden sollen
+plt.figure(figsize=(20, 4))
+for i in range(n):
+    ax = plt.subplot(2, n, i + 1)
+    plt.imshow(X_test[i].reshape(28, 28))
+    ax.set_title('original')
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    
+    ax = plt.subplot(2, n, i + 1 + n)
+    plt.imshow(predicted_imgs[i].reshape(28, 28))
+    plt.gray()
+    ax.set_title('reconstructed')
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+plt.show()
