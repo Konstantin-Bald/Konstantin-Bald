@@ -1,0 +1,32 @@
+import tensorflow as tf
+import tensorflow.keras 
+import keras
+mnist = tf.keras.datasets.mnist
+(X_train, Y_train), (X_test,Y_test) = mnist.load_data()
+X_train, X_test = X_train/255.0, X_test/255.0
+
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Flatten(input_shape=(28,28)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dropout(0.2),
+    tf.keras.layers.Dense(10)
+])
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+model.compile(optimizer='adam', loss=loss_fn, metrics=['accuracy'])
+model.fit(X_train, Y_train, epochs=5, batch_size=32)
+import numpy as np
+lenght = X_train.shape[0]
+mask = np.random.rand(lenght)
+x_train, x_val = X_train[mask <= 0.8], X_train[mask > 0.8]
+y_train, y_val = Y_train[mask <= 0.8], Y_train[mask > 0.8]
+print(x_train.shape, x_val.shape)
+model.fit(x_train, y_train, epochs=5, batch_size=12, # anstatt diese variante zu wählen, wähle split validation_data=(x_val, y_val)
+          validation_split=0.2)
+
+test_loss, test_acc = model.evaluate(X_test, Y_test)
+print('Test loss:{:.3f}, test accuracy : {:.3f}'.format(test_loss, test_acc))
+
+prediction = model.predict(X_test, verbose=1)
+print(prediction)
+
+
